@@ -5,6 +5,7 @@ import com.travelit.backend.auth.dto.LoginRequest;
 import com.travelit.backend.auth.dto.RegisterRequest;
 import com.travelit.backend.exception.EmailAlreadyExistsException;
 import com.travelit.backend.exception.InvalidTokenException;
+import com.travelit.backend.invite.InviteService;
 import com.travelit.backend.security.JwtService;
 import com.travelit.backend.security.TokenService;
 import com.travelit.backend.user.AuthProvider;
@@ -26,6 +27,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final TokenService tokenService;
+    private final InviteService inviteService;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -40,6 +42,7 @@ public class AuthService {
                 .emailVerified(false)
                 .build();
         user = userRepository.save(user);
+        inviteService.autoAcceptPendingInvites(user);
         return issueTokensForUser(user);
     }
 
