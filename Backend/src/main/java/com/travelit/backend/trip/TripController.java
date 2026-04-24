@@ -1,6 +1,7 @@
 package com.travelit.backend.trip;
 
 import com.travelit.backend.trip.dto.CreateTripRequest;
+import com.travelit.backend.trip.dto.TripMemberResponse;
 import com.travelit.backend.trip.dto.TripResponse;
 import com.travelit.backend.trip.dto.TripSummaryResponse;
 import com.travelit.backend.trip.dto.UpdateTripRequest;
@@ -50,6 +51,27 @@ public class TripController {
     public ResponseEntity<Void> delete(@PathVariable UUID id,
                                        @AuthenticationPrincipal String userId) {
         tripService.delete(id, UUID.fromString(userId));
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/members")
+    public ResponseEntity<List<TripMemberResponse>> getMembers(@PathVariable UUID id,
+                                                               @AuthenticationPrincipal String userId) {
+        return ResponseEntity.ok(tripService.getMembers(id, UUID.fromString(userId)));
+    }
+
+    @DeleteMapping("/{id}/members/{memberId}")
+    public ResponseEntity<Void> removeMember(@PathVariable UUID id,
+                                             @PathVariable UUID memberId,
+                                             @AuthenticationPrincipal String userId) {
+        tripService.removeMember(id, memberId, UUID.fromString(userId));
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}/members/me")
+    public ResponseEntity<Void> leaveTrip(@PathVariable UUID id,
+                                          @AuthenticationPrincipal String userId) {
+        tripService.leaveTrip(id, UUID.fromString(userId));
         return ResponseEntity.noContent().build();
     }
 }

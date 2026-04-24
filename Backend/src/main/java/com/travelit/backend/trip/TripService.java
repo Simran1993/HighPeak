@@ -1,6 +1,7 @@
 package com.travelit.backend.trip;
 
 import com.travelit.backend.trip.dto.CreateTripRequest;
+import com.travelit.backend.trip.dto.TripMemberResponse;
 import com.travelit.backend.trip.dto.TripResponse;
 import com.travelit.backend.trip.dto.TripSummaryResponse;
 import com.travelit.backend.trip.dto.UpdateTripRequest;
@@ -90,6 +91,35 @@ public class TripService {
         }
 
         tripRepository.deleteById(tripId);
+    }
+
+    public List<TripMemberResponse> getMembers(UUID tripId, UUID requesterId) {
+        findMemberOrThrow(tripId, requesterId);
+        return tripMemberRepository.findByIdTripId(tripId).stream()
+                .map(TripMemberResponse::from)
+                .toList();
+    }
+
+    @Transactional
+    public void removeMember(UUID tripId, UUID targetUserId, UUID requesterId) {
+        TripMember requester = findMemberOrThrow(tripId, requesterId);
+        if (requester.getRole() != MemberRole.OWNER) {
+            throw new AccessDeniedException("Only the owner can remove members");
+        }
+        if (targetUserId.equals(requesterId)) {
+            throw new IllegalStateException("Owner cannot remove themselves — delete the trip instead");
+        }
+        TripMember target = findMemberOrThrow(tripId, targetUserId);
+        tripMemberRepository.delete(target);
+    }
+
+    @Transactional
+    public void leaveTrip(UUID tripId, UUID userId) {
+        TripMember member = findMemberOrThrow(tripId, userId);
+        if (member.getRole() == MemberRole.OWNER) {
+            throw new IllegalStateException("Owner cannot leave — delete the trip instead");
+        }
+        tripMemberRepository.delete(member);
     }
 
     private Trip findTripOrThrow(UUID tripId) {
