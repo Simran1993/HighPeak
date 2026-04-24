@@ -40,7 +40,7 @@ public class AuthService {
                 .emailVerified(false)
                 .build();
         user = userRepository.save(user);
-        return issueTokens(user);
+        return issueTokensForUser(user);
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -49,7 +49,7 @@ public class AuthService {
         if (user.getPasswordHash() == null || !passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             throw new BadCredentialsException("Invalid credentials");
         }
-        return issueTokens(user);
+        return issueTokensForUser(user);
     }
 
     public AuthResponse refresh(String refreshToken) {
@@ -65,7 +65,7 @@ public class AuthService {
         UUID userId = UUID.fromString(jwtService.extractUserId(refreshToken));
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new InvalidTokenException("User not found"));
-        return issueTokens(user);
+        return issueTokensForUser(user);
     }
 
     public void logout(String refreshToken) {
@@ -74,7 +74,7 @@ public class AuthService {
         }
     }
 
-    private AuthResponse issueTokens(User user) {
+    public AuthResponse issueTokensForUser(User user) {
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
         tokenService.store(jwtService.extractJti(refreshToken), user.getId(), jwtService.getRefreshExpirationMs());
