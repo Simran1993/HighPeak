@@ -5,7 +5,7 @@ import com.travelit.backend.trip.dto.TripResponse;
 import com.travelit.backend.trip.dto.TripSummaryResponse;
 import com.travelit.backend.trip.dto.UpdateTripRequest;
 import com.travelit.backend.user.User;
-import com.travelit.backend.user.UserRepository;
+import com.travelit.backend.user.UserService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
@@ -21,11 +21,11 @@ public class TripService {
 
     private final TripRepository tripRepository;
     private final TripMemberRepository tripMemberRepository;
-    private final UserRepository userRepository;
+    private final UserService userService;
 
     @Transactional
     public TripResponse create(CreateTripRequest request, UUID ownerId) {
-        User owner = userRepository.getReferenceById(ownerId);
+        User owner = userService.getById(ownerId);
 
         Trip trip = Trip.builder()
                 .title(request.title())
