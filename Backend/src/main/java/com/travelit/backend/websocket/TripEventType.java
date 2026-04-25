@@ -1,0 +1,8 @@
+package com.travelit.backend.websocket;
+
+public enum TripEventType {
+    TRIP_UPDATED,
+    MEMBER_ADDED, MEMBER_REMOVED, MEMBER_LEFT,
+    DAY_ADDED, DAY_DELETED,
+    ACTIVITY_ADDED, ACTIVITY_UPDATED, ACTIVITY_DELETED
+}

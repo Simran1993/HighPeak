@@ -3,18 +3,18 @@ services:
   # ── PostgreSQL ────────────────────────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
-    container_name: tripplanner-db
+    container_name: tp-backend-db
     restart: unless-stopped
     environment:
-      POSTGRES_DB:       tripplanner
-      POSTGRES_USER:     tripplanner
-      POSTGRES_PASSWORD: tripplanner
+      POSTGRES_DB:       tp-backend
+      POSTGRES_USER:     tp-backend
+      POSTGRES_PASSWORD: tp-backend
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U tripplanner"]
+      test: ["CMD-SHELL", "pg_isready -U tp-backend"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -22,7 +22,7 @@ services:
   # ── Redis ─────────────────────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
-    container_name: tripplanner-redis
+    container_name: tp-backend-redis
     restart: unless-stopped
     ports:
       - "6379:6379"
@@ -38,7 +38,7 @@ services:
   # ── MailHog (catch-all SMTP for invite emails in dev) ─────────────────────
   mailhog:
     image: mailhog/mailhog:latest
-    container_name: tripplanner-mail
+    container_name: tp-backend-mail
     restart: unless-stopped
     ports:
       - "1025:1025"

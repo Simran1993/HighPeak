@@ -5,6 +5,7 @@ import com.travelit.backend.auth.dto.LoginRequest;
 import com.travelit.backend.auth.dto.RegisterRequest;
 import com.travelit.backend.exception.EmailAlreadyExistsException;
 import com.travelit.backend.exception.InvalidTokenException;
+import com.travelit.backend.invite.InviteService;
 import com.travelit.backend.security.JwtService;
 import com.travelit.backend.security.TokenService;
 import com.travelit.backend.user.AuthProvider;
@@ -26,6 +27,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final TokenService tokenService;
+    private final InviteService inviteService;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -40,7 +42,8 @@ public class AuthService {
                 .emailVerified(false)
                 .build();
         user = userRepository.save(user);
-        return issueTokens(user);
+        inviteService.autoAcceptPendingInvites(user);
+        return issueTokensForUser(user);
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -49,7 +52,7 @@ public class AuthService {
         if (user.getPasswordHash() == null || !passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             throw new BadCredentialsException("Invalid credentials");
         }
-        return issueTokens(user);
+        return issueTokensForUser(user);
     }
 
     public AuthResponse refresh(String refreshToken) {
@@ -65,7 +68,7 @@ public class AuthService {
         UUID userId = UUID.fromString(jwtService.extractUserId(refreshToken));
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new InvalidTokenException("User not found"));
-        return issueTokens(user);
+        return issueTokensForUser(user);
     }
 
     public void logout(String refreshToken) {
@@ -74,7 +77,7 @@ public class AuthService {
         }
     }
 
-    private AuthResponse issueTokens(User user) {
+    public AuthResponse issueTokensForUser(User user) {
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
         tokenService.store(jwtService.extractJti(refreshToken), user.getId(), jwtService.getRefreshExpirationMs());
