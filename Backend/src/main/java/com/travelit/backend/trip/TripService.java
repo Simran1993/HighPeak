@@ -7,6 +7,8 @@ import com.travelit.backend.trip.dto.TripSummaryResponse;
 import com.travelit.backend.trip.dto.UpdateTripRequest;
 import com.travelit.backend.user.User;
 import com.travelit.backend.user.UserService;
+import com.travelit.backend.websocket.TripEventPublisher;
+import com.travelit.backend.websocket.TripEventType;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -23,6 +26,7 @@ public class TripService {
     private final TripRepository tripRepository;
     private final TripMemberRepository tripMemberRepository;
     private final UserService userService;
+    private final TripEventPublisher eventPublisher;
 
     @Transactional
     public TripResponse create(CreateTripRequest request, UUID ownerId) {
@@ -78,7 +82,9 @@ public class TripService {
         if (request.startDate() != null)   trip.setStartDate(request.startDate());
         if (request.endDate() != null)     trip.setEndDate(request.endDate());
 
-        return TripResponse.from(tripRepository.save(trip), member.getRole());
+        TripResponse response = TripResponse.from(tripRepository.save(trip), member.getRole());
+        eventPublisher.publish(TripEventType.TRIP_UPDATED, tripId, response, userId);
+        return response;
     }
 
     @Transactional
@@ -111,6 +117,7 @@ public class TripService {
         }
         TripMember target = findMemberOrThrow(tripId, targetUserId);
         tripMemberRepository.delete(target);
+        eventPublisher.publish(TripEventType.MEMBER_REMOVED, tripId, Map.of("userId", targetUserId), requesterId);
     }
 
     @Transactional
@@ -120,6 +127,7 @@ public class TripService {
             throw new IllegalStateException("Owner cannot leave — delete the trip instead");
         }
         tripMemberRepository.delete(member);
+        eventPublisher.publish(TripEventType.MEMBER_LEFT, tripId, Map.of("userId", userId), userId);
     }
 
     private Trip findTripOrThrow(UUID tripId) {

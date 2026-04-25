@@ -5,6 +5,8 @@ import com.travelit.backend.invite.dto.InviteResponse;
 import com.travelit.backend.trip.*;
 import com.travelit.backend.user.User;
 import com.travelit.backend.user.UserService;
+import com.travelit.backend.websocket.TripEventPublisher;
+import com.travelit.backend.websocket.TripEventType;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -25,6 +28,7 @@ public class InviteService {
     private final TripMemberRepository tripMemberRepository;
     private final UserService userService;
     private final InviteMailService mailService;
+    private final TripEventPublisher eventPublisher;
 
     @Value("${app.invite.expiration-hours}")
     private int expirationHours;
@@ -90,6 +94,8 @@ public class InviteService {
                     .role(MemberRole.EDITOR)
                     .build();
             tripMemberRepository.save(member);
+            eventPublisher.publish(TripEventType.MEMBER_ADDED, tripId,
+                    Map.of("userId", userId, "role", MemberRole.EDITOR), userId);
         }
 
         invite.setStatus(InviteStatus.ACCEPTED);
@@ -116,6 +122,8 @@ public class InviteService {
                         .role(MemberRole.EDITOR)
                         .build();
                 tripMemberRepository.save(member);
+                eventPublisher.publish(TripEventType.MEMBER_ADDED, tripId,
+                        Map.of("userId", user.getId(), "role", MemberRole.EDITOR), user.getId());
             }
             invite.setStatus(InviteStatus.ACCEPTED);
         }
