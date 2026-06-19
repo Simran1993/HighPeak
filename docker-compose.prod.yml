@@ -1,0 +1,69 @@
+services:
+
+  # ── PostgreSQL ────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: tp-backend-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       ${DB_NAME}
+      POSTGRES_USER:     ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis ─────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: tp-backend-redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── App ───────────────────────────────────────────────────────────────────
+  app:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: tp-backend-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_HOST:     postgres
+      DB_PORT:     5432
+      DB_NAME:     ${DB_NAME}
+      DB_USER:     ${DB_USER}
+      DB_PASS:     ${DB_PASS}
+      REDIS_HOST:  redis
+      REDIS_PORT:  6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      MAIL_HOST:   ${MAIL_HOST}
+      MAIL_PORT:   ${MAIL_PORT}
+      MAIL_USER:   ${MAIL_USER}
+      MAIL_PASS:   ${MAIL_PASS}
+      JWT_SECRET:            ${JWT_SECRET}
+      FRONTEND_URL:          ${FRONTEND_URL}
+      GOOGLE_CLIENT_ID:      ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET:  ${GOOGLE_CLIENT_SECRET}
+
+volumes:
+  postgres_data:
+  redis_data:
