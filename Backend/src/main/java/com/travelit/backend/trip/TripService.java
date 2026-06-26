@@ -41,15 +41,20 @@ public class TripService {
                 .status(TripStatus.DRAFT)
                 .createdBy(owner)
                 .build();
-        trip = tripRepository.save(trip);
+        // saveAndFlush so the @CreationTimestamp / @UpdateTimestamp are populated
+        // before we build the response (otherwise they'd be null until commit).
+        trip = tripRepository.saveAndFlush(trip);
 
+        // Let @MapsId derive the composite key from the trip/user associations, and let
+        // the cascade = ALL on Trip.members persist this membership. Pre-setting the
+        // @EmbeddedId would make repository.save() take the merge() path, leaving this
+        // (detached) instance to collide with its managed copy at flush.
         TripMember ownerMember = TripMember.builder()
-                .id(new TripMemberId(trip.getId(), ownerId))
+                .id(new TripMemberId())
                 .trip(trip)
                 .user(owner)
                 .role(MemberRole.OWNER)
                 .build();
-        tripMemberRepository.save(ownerMember);
         trip.getMembers().add(ownerMember);
 
         return TripResponse.from(trip, MemberRole.OWNER);
