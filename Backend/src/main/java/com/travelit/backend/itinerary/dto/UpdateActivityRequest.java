@@ -8,6 +8,7 @@ import java.time.LocalTime;
 public record UpdateActivityRequest(
         String title,
         LocalTime startTime,
+        LocalTime endTime,
         String location,
         String notes,
         BigDecimal cost,

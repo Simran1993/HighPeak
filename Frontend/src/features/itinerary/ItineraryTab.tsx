@@ -1,9 +1,10 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CalendarPlus, ExternalLink, MapPin, Pencil, Trash2 } from 'lucide-react';
+import { CalendarPlus, ExternalLink, MapPin, Pencil, Plane, Trash2 } from 'lucide-react';
 import { itineraryApi } from '@/api/itinerary';
 import { queryKeys } from '@/lib/queryKeys';
 import { Button } from '@/components/ui/Button';
@@ -11,7 +12,15 @@ import { Field, Input, Select, Textarea } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { Badge } from '@/components/ui/Badge';
 import { PageSpinner, EmptyState } from '@/components/ui/Spinner';
-import { CATEGORY_META, formatCost, formatDate, formatTime } from '@/lib/utils';
+import {
+  CATEGORY_META,
+  extractFlightCode,
+  formatCost,
+  formatDate,
+  formatDuration,
+  formatTime,
+  isOvernight,
+} from '@/lib/utils';
 import { handleApiError } from '@/lib/errors';
 import { toast } from '@/stores/toastStore';
 import type { ActivityCategory, ActivityResponse, DayResponse } from '@/types/api';
@@ -21,6 +30,7 @@ const CATEGORIES = Object.keys(CATEGORY_META) as ActivityCategory[];
 const activitySchema = z.object({
   title: z.string().min(1, 'Title is required'),
   startTime: z.string().min(1, 'Time is required'),
+  endTime: z.string().optional(),
   location: z.string().min(1, 'Location is required'),
   notes: z.string().min(1, 'Notes are required'),
   cost: z.string().optional(),
@@ -33,6 +43,7 @@ function toRequest(v: ActivityFormValues) {
   return {
     title: v.title,
     startTime: v.startTime.length === 5 ? `${v.startTime}:00` : v.startTime,
+    endTime: v.endTime ? (v.endTime.length === 5 ? `${v.endTime}:00` : v.endTime) : null,
     location: v.location,
     notes: v.notes,
     cost: v.cost ? Number(v.cost) : null,
@@ -61,13 +72,14 @@ function ActivityFormModal({
       ? {
           title: editing.title,
           startTime: editing.startTime.slice(0, 5),
+          endTime: editing.endTime?.slice(0, 5) ?? '',
           location: editing.location,
           notes: editing.notes,
           cost: editing.cost != null ? String(editing.cost) : '',
           category: editing.category ?? '',
           bookingLink: editing.bookingLink ?? '',
         }
-      : { title: '', startTime: '', location: '', notes: '', cost: '', category: '', bookingLink: '' },
+      : { title: '', startTime: '', endTime: '', location: '', notes: '', cost: '', category: '', bookingLink: '' },
   });
 
   const mutation = useMutation({
@@ -89,15 +101,7 @@ function ActivityFormModal({
       <form onSubmit={handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Title" error={formState.errors.title?.message}>
-            <Input placeholder="Visit Senso-ji Temple" {...register('title')} />
-          </Field>
-          <Field label="Start time" error={formState.errors.startTime?.message}>
-            <Input type="time" {...register('startTime')} />
-          </Field>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Location" error={formState.errors.location?.message}>
-            <Input placeholder="Asakusa, Tokyo" {...register('location')} />
+            <Input placeholder="Flight AI302 to Tokyo" {...register('title')} />
           </Field>
           <Field label="Category">
             <Select {...register('category')}>
@@ -108,6 +112,17 @@ function ActivityFormModal({
                 </option>
               ))}
             </Select>
+          </Field>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Field label="Start time" error={formState.errors.startTime?.message}>
+            <Input type="time" {...register('startTime')} />
+          </Field>
+          <Field label="End / arrival (optional)">
+            <Input type="time" {...register('endTime')} />
+          </Field>
+          <Field label="Location" error={formState.errors.location?.message}>
+            <Input placeholder="Asakusa, Tokyo" {...register('location')} />
           </Field>
         </div>
         <Field label="Notes" error={formState.errors.notes?.message}>
@@ -261,8 +276,14 @@ export function ItineraryTab({ tripId, canEdit }: { tripId: string; canEdit: boo
                   <ul className="divide-y divide-gray-50">
                     {day.activities.map((a) => (
                       <li key={a.id} className="flex items-start gap-3 px-4 py-3">
-                        <span className="mt-0.5 w-16 shrink-0 text-sm font-medium text-gray-500">
+                        <span className="mt-0.5 w-20 shrink-0 text-sm font-medium text-gray-500">
                           {formatTime(a.startTime)}
+                          {a.endTime && (
+                            <span className="block text-xs font-normal text-gray-400">
+                              → {formatTime(a.endTime)}
+                              {isOvernight(a.startTime, a.endTime) && ' +1d'}
+                            </span>
+                          )}
                         </span>
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
@@ -272,8 +293,21 @@ export function ItineraryTab({ tripId, canEdit }: { tripId: string; canEdit: boo
                                 {CATEGORY_META[a.category].emoji} {CATEGORY_META[a.category].label}
                               </Badge>
                             )}
+                            {a.endTime && (
+                              <span className="text-xs font-medium text-gray-400">
+                                ⏱ {formatDuration(a.startTime, a.endTime)}
+                              </span>
+                            )}
                             {a.cost != null && (
                               <span className="text-xs font-medium text-gray-500">{formatCost(a.cost)}</span>
+                            )}
+                            {a.category === 'TRANSPORT' && extractFlightCode(a.title) && (
+                              <Link
+                                to={`/flights?q=${extractFlightCode(a.title)}`}
+                                className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 text-xs font-semibold text-sky-700 hover:bg-sky-100"
+                              >
+                                <Plane className="h-3 w-3" /> Track live
+                              </Link>
                             )}
                           </div>
                           <p className="mt-0.5 flex items-center gap-1 text-sm text-gray-500">

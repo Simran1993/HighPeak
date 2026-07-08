@@ -10,6 +10,7 @@ import java.time.LocalTime;
 public record CreateActivityRequest(
         @NotBlank String title,
         @NotNull LocalTime startTime,
+        LocalTime endTime,
         @NotBlank String location,
         @NotBlank String notes,
         BigDecimal cost,

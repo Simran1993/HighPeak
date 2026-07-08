@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Bookmark, CalendarDays, Heart, MapPin } from 'lucide-react';
+import { Bookmark, CalendarDays, Heart, MapPin, Trash2 } from 'lucide-react';
 import { postsApi } from '@/api/posts';
 import { Avatar } from '@/components/ui/Badge';
+import { useAuthStore } from '@/stores/authStore';
 import { cn, formatDateRange, gradientFor, timeAgo, tripDurationDays } from '@/lib/utils';
 import { handleApiError } from '@/lib/errors';
+import { toast } from '@/stores/toastStore';
 import type { PostResponse } from '@/types/api';
 
 /**
@@ -13,6 +15,8 @@ import type { PostResponse } from '@/types/api';
  */
 export function PostCard({ post }: { post: PostResponse }) {
   const queryClient = useQueryClient();
+  const me = useAuthStore((s) => s.user);
+  const isMine = me?.id === post.authorId;
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['posts'] });
 
   const likeMutation = useMutation({
@@ -27,19 +31,42 @@ export function PostCard({ post }: { post: PostResponse }) {
     onError: handleApiError,
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: () => postsApi.remove(post.id),
+    onSuccess: () => {
+      invalidate();
+      toast.success('Post removed from Explore');
+    },
+    onError: handleApiError,
+  });
+
   const duration = tripDurationDays(post.startDate, post.endDate);
 
   return (
     <article className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
       {/* Author row */}
       <div className="flex items-center gap-3 px-4 py-3">
-        <Avatar name={post.authorName} src={post.authorAvatarUrl} size="sm" />
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold">{post.authorName}</p>
-          <p className="truncate text-xs text-gray-500">
-            {post.destination ?? 'Somewhere'} · {timeAgo(post.createdAt)}
-          </p>
-        </div>
+        <Link to={`/users/${post.authorId}`} className="flex min-w-0 flex-1 items-center gap-3">
+          <Avatar name={post.authorName} src={post.authorAvatarUrl} size="sm" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold hover:text-brand-700">{post.authorName}</p>
+            <p className="truncate text-xs text-gray-500">
+              {post.destination ?? 'Somewhere'} · {timeAgo(post.createdAt)}
+            </p>
+          </div>
+        </Link>
+        {isMine && (
+          <button
+            title="Delete post"
+            className="rounded-lg p-1.5 text-gray-300 hover:bg-red-50 hover:text-red-600"
+            onClick={() => {
+              if (confirm('Remove this post from Explore? Your trip itself is not deleted.'))
+                deleteMutation.mutate();
+            }}
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
       {/* Cover */}

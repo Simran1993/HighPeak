@@ -10,6 +10,8 @@ export const queryKeys = {
   myPosts: () => ['posts', 'mine'] as const,
   savedPosts: () => ['posts', 'saved'] as const,
   post: (id: string) => ['posts', id] as const,
+  authorPosts: (userId: string) => ['posts', 'author', userId] as const,
+  profile: (userId: string) => ['profile', userId] as const,
   postItinerary: (id: string) => ['posts', id, 'itinerary'] as const,
   geocode: (q: string) => ['geocode', q] as const,
 };

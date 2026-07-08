@@ -46,6 +46,12 @@ public class PostController {
         return ResponseEntity.ok(postService.getSaved(UUID.fromString(userId)));
     }
 
+    @GetMapping("/by-author/{authorId}")
+    public ResponseEntity<List<PostResponse>> getByAuthor(@PathVariable UUID authorId,
+                                                          @AuthenticationPrincipal String userId) {
+        return ResponseEntity.ok(postService.getByAuthor(authorId, UUID.fromString(userId)));
+    }
+
     @GetMapping("/by-trip/{tripId}")
     public ResponseEntity<PostResponse> getByTrip(@PathVariable UUID tripId,
                                                   @AuthenticationPrincipal String userId) {

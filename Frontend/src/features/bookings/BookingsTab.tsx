@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ExternalLink, Info } from 'lucide-react';
+import { ExternalLink, Info, Plus } from 'lucide-react';
 import { itineraryApi } from '@/api/itinerary';
 import { queryKeys } from '@/lib/queryKeys';
 import { BOOKING_GROUPS, type BookingContext } from '@/lib/bookingLinks';
 import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { AddBookingModal } from './AddBookingModal';
 import { CATEGORY_META, formatCost, formatDate, formatTime } from '@/lib/utils';
 import type { TripResponse } from '@/types/api';
 
@@ -19,6 +21,8 @@ import type { TripResponse } from '@/types/api';
  */
 export function BookingsTab({ trip }: { trip: TripResponse }) {
   const [tab, setTab] = useState<(typeof BOOKING_GROUPS)[number]['key']>('stays');
+  const [showAdd, setShowAdd] = useState(false);
+  const canEdit = trip.myRole === 'OWNER' || trip.myRole === 'EDITOR';
   const ctx: BookingContext = {
     destination: trip.destination,
     startDate: trip.startDate,
@@ -93,19 +97,34 @@ export function BookingsTab({ trip }: { trip: TripResponse }) {
       <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3.5">
           <h3 className="font-semibold">Booked so far</h3>
-          {bookedTotal > 0 && (
-            <span className="text-sm font-medium text-gray-600">Total {formatCost(bookedTotal)}</span>
-          )}
+          <div className="flex items-center gap-3">
+            {bookedTotal > 0 && (
+              <span className="text-sm font-medium text-gray-600">Total {formatCost(bookedTotal)}</span>
+            )}
+            {canEdit && (
+              <Button size="sm" variant="outline" onClick={() => setShowAdd(true)}>
+                <Plus className="h-4 w-4" /> Add booking
+              </Button>
+            )}
+          </div>
         </div>
 
         {!bookings.length ? (
           <div className="flex items-start gap-3 px-5 py-6 text-sm text-gray-500">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-brand-500" />
             <p>
-              Nothing tracked yet. When you book a stay or ticket, add it to the itinerary as an
-              activity with the <Badge className={CATEGORY_META.ACCOMMODATION.color}>🏨 Stay</Badge>{' '}
-              or <Badge className={CATEGORY_META.TRANSPORT.color}>🚆 Transport</Badge> category and
-              paste your confirmation link — it will show up here automatically.
+              Nothing tracked yet.{' '}
+              {canEdit ? (
+                <>
+                  Hit <span className="font-medium text-gray-700">Add booking</span> to log a stay
+                  or ticket you've already booked — it lands in the itinerary too. Activities with
+                  the <Badge className={CATEGORY_META.ACCOMMODATION.color}>🏨 Stay</Badge> or{' '}
+                  <Badge className={CATEGORY_META.TRANSPORT.color}>🚆 Transport</Badge> category
+                  also show up here automatically.
+                </>
+              ) : (
+                <>No stays or transport have been added to this trip's itinerary yet.</>
+              )}
             </p>
           </div>
         ) : (
@@ -137,6 +156,8 @@ export function BookingsTab({ trip }: { trip: TripResponse }) {
           </ul>
         )}
       </div>
+
+      <AddBookingModal open={showAdd} onClose={() => setShowAdd(false)} tripId={trip.id} days={days ?? []} />
     </div>
   );
 }

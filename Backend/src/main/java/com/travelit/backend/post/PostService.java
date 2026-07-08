@@ -99,6 +99,13 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
+    public List<PostResponse> getByAuthor(UUID authorId, UUID requesterId) {
+        return postRepository.findByAuthor_IdOrderByCreatedAtDesc(authorId).stream()
+                .map(post -> toResponse(post, requesterId))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<PostResponse> getMine(UUID userId) {
         return postRepository.findByAuthor_IdOrderByCreatedAtDesc(userId).stream()
                 .map(post -> toResponse(post, userId))

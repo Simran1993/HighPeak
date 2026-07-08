@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bookmark, CalendarDays, ExternalLink, Heart, MapPin, Trash2 } from 'lucide-react';
+import { Bookmark, CalendarDays, ExternalLink, Heart, MapPin, Plane, Trash2 } from 'lucide-react';
 import { postsApi } from '@/api/posts';
 import { queryKeys } from '@/lib/queryKeys';
 import { useAuthStore } from '@/stores/authStore';
@@ -9,7 +9,18 @@ import { TripMap, type MapPin as Pin } from '@/components/map/TripMap';
 import { Avatar, Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { PageSpinner, EmptyState } from '@/components/ui/Spinner';
-import { CATEGORY_META, cn, formatCost, formatDate, formatDateRange, formatTime, timeAgo } from '@/lib/utils';
+import {
+  CATEGORY_META,
+  cn,
+  extractFlightCode,
+  formatCost,
+  formatDate,
+  formatDateRange,
+  formatDuration,
+  formatTime,
+  isOvernight,
+  timeAgo,
+} from '@/lib/utils';
 import { handleApiError } from '@/lib/errors';
 import { toast } from '@/stores/toastStore';
 
@@ -168,8 +179,14 @@ export function PostDetailPage() {
                     <ul className="divide-y divide-gray-50">
                       {day.activities.map((a) => (
                         <li key={a.id} className="flex items-start gap-3 px-4 py-3">
-                          <span className="mt-0.5 w-16 shrink-0 text-sm font-medium text-gray-500">
+                          <span className="mt-0.5 w-20 shrink-0 text-sm font-medium text-gray-500">
                             {formatTime(a.startTime)}
+                            {a.endTime && (
+                              <span className="block text-xs font-normal text-gray-400">
+                                → {formatTime(a.endTime)}
+                                {isOvernight(a.startTime, a.endTime) && ' +1d'}
+                              </span>
+                            )}
                           </span>
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-2">
@@ -179,8 +196,21 @@ export function PostDetailPage() {
                                   {CATEGORY_META[a.category].emoji} {CATEGORY_META[a.category].label}
                                 </Badge>
                               )}
+                              {a.endTime && (
+                                <span className="text-xs font-medium text-gray-400">
+                                  ⏱ {formatDuration(a.startTime, a.endTime)}
+                                </span>
+                              )}
                               {a.cost != null && (
                                 <span className="text-xs font-medium text-gray-500">{formatCost(a.cost)}</span>
+                              )}
+                              {a.category === 'TRANSPORT' && extractFlightCode(a.title) && (
+                                <Link
+                                  to={`/flights?q=${extractFlightCode(a.title)}`}
+                                  className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 text-xs font-semibold text-sky-700 hover:bg-sky-100"
+                                >
+                                  <Plane className="h-3 w-3" /> Track live
+                                </Link>
                               )}
                             </div>
                             <p className="mt-0.5 flex items-center gap-1 text-sm text-gray-500">

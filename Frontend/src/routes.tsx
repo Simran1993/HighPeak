@@ -11,6 +11,8 @@ import { ExplorePage } from '@/pages/ExplorePage';
 import { PostDetailPage } from '@/pages/PostDetailPage';
 import { SavedPostsPage } from '@/pages/SavedPostsPage';
 import { InviteAcceptPage } from '@/pages/InviteAcceptPage';
+import { FlightTrackerPage } from '@/pages/FlightTrackerPage';
+import { ProfilePage } from '@/pages/ProfilePage';
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -27,6 +29,8 @@ export const router = createBrowserRouter([
       { path: '/explore', element: <ExplorePage /> },
       { path: '/explore/:postId', element: <PostDetailPage /> },
       { path: '/saved', element: <SavedPostsPage /> },
+      { path: '/flights', element: <FlightTrackerPage /> },
+      { path: '/users/:userId', element: <ProfilePage /> },
       { path: '/dashboard', element: <DashboardPage /> },
       { path: '/trips/new', element: <NewTripPage /> },
       { path: '/trips/:id', element: <TripDetailPage /> },

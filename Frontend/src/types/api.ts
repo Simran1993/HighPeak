@@ -15,8 +15,24 @@ export interface UserResponse {
   email: string;
   name: string;
   avatarUrl: string | null;
+  bio: string | null;
   authProvider: 'LOCAL' | 'GOOGLE';
   emailVerified: boolean;
+}
+
+/** Public profile — no email or auth details. */
+export interface ProfileResponse {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+  bio: string | null;
+  joinedAt: string;
+}
+
+export interface UpdateProfileRequest {
+  name?: string;
+  bio?: string;
+  avatarUrl?: string;
 }
 
 // Trips
@@ -82,6 +98,7 @@ export interface ActivityResponse {
   dayId: string;
   title: string;
   startTime: string; // HH:mm:ss
+  endTime: string | null; // HH:mm:ss — arrival/end time (e.g. flight landing)
   location: string;
   notes: string;
   cost: number | null;
@@ -105,6 +122,7 @@ export interface CreateDayRequest {
 export interface CreateActivityRequest {
   title: string;
   startTime: string;
+  endTime?: string | null;
   location: string;
   notes: string;
   cost?: number | null;

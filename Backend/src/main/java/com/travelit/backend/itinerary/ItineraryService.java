@@ -71,6 +71,7 @@ public class ItineraryService {
                 .day(day)
                 .title(request.title())
                 .startTime(request.startTime())
+                .endTime(request.endTime())
                 .location(request.location())
                 .notes(request.notes())
                 .cost(request.cost())
@@ -91,6 +92,7 @@ public class ItineraryService {
 
         if (request.title() != null)       activity.setTitle(request.title());
         if (request.startTime() != null)   activity.setStartTime(request.startTime());
+        if (request.endTime() != null)     activity.setEndTime(request.endTime());
         if (request.location() != null)    activity.setLocation(request.location());
         if (request.notes() != null)       activity.setNotes(request.notes());
         if (request.cost() != null)        activity.setCost(request.cost());

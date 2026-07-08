@@ -27,6 +27,34 @@ export function formatTime(hms: string) {
   return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }
 
+/**
+ * Duration between two HH:mm(:ss) times. If end < start we assume it
+ * crosses midnight (overnight flight). Returns e.g. "2h 45m".
+ */
+export function formatDuration(start: string, end: string) {
+  const [sh, sm] = start.split(':').map(Number);
+  const [eh, em] = end.split(':').map(Number);
+  let mins = eh * 60 + em - (sh * 60 + sm);
+  if (mins < 0) mins += 24 * 60; // overnight
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return h ? `${h}h${m ? ` ${m}m` : ''}` : `${m}m`;
+}
+
+/** Does end time land on the next day? */
+export function isOvernight(start: string, end: string) {
+  return end < start;
+}
+
+/**
+ * Extract a flight number from an activity title, e.g.
+ * "Flight AI 302 to Tokyo" → "AI302". Only meant for TRANSPORT activities.
+ */
+export function extractFlightCode(title: string): string | null {
+  const m = title.toUpperCase().match(/\b([A-Z]{2}|[A-Z]\d|\d[A-Z])\s?(\d{2,4})\b/);
+  return m ? `${m[1]}${m[2]}` : null;
+}
+
 export function formatCost(cost: number | null) {
   if (cost === null || cost === undefined) return null;
   if (cost === 0) return 'Free';

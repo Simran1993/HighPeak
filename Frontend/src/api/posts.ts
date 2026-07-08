@@ -6,6 +6,8 @@ export const postsApi = {
     api.get<PostResponse[]>('/posts', { params: { page, size } }).then((r) => r.data),
 
   mine: () => api.get<PostResponse[]>('/posts/mine').then((r) => r.data),
+  byAuthor: (authorId: string) =>
+    api.get<PostResponse[]>(`/posts/by-author/${authorId}`).then((r) => r.data),
   saved: () => api.get<PostResponse[]>('/posts/saved').then((r) => r.data),
   get: (id: string) => api.get<PostResponse>(`/posts/${id}`).then((r) => r.data),
   byTrip: (tripId: string) => api.get<PostResponse>(`/posts/by-trip/${tripId}`).then((r) => r.data),
