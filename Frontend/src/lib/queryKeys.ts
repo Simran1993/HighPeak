@@ -1,0 +1,15 @@
+export const queryKeys = {
+  me: () => ['me'] as const,
+  trips: () => ['trips'] as const,
+  trip: (id: string) => ['trip', id] as const,
+  tripMembers: (id: string) => ['trip', id, 'members'] as const,
+  itinerary: (tripId: string) => ['trip', tripId, 'itinerary'] as const,
+  pendingInvites: (tripId: string) => ['trip', tripId, 'invites'] as const,
+  tripPost: (tripId: string) => ['trip', tripId, 'post'] as const,
+  feed: () => ['posts', 'feed'] as const,
+  myPosts: () => ['posts', 'mine'] as const,
+  savedPosts: () => ['posts', 'saved'] as const,
+  post: (id: string) => ['posts', id] as const,
+  postItinerary: (id: string) => ['posts', id, 'itinerary'] as const,
+  geocode: (q: string) => ['geocode', q] as const,
+};

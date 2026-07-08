@@ -1,45 +1,42 @@
-# HighPeak — Demo Frontend
+# HighPeak Frontend
 
-A **throwaway, zero-build demo** for poking at the HighPeak backend in a browser.
-It is intentionally simple so it can be deleted and replaced by the real
-**React + Vite + TypeScript** stack described in [`../FRONTEND.md`](../FRONTEND.md)
-once the project scales.
+React 18 + Vite + TypeScript, per `../FRONTEND.md`. Tailwind CSS, TanStack Query, Zustand, React Router v6, STOMP/SockJS, Leaflet + OpenStreetMap.
 
-- **No `npm install`, no bundler.** `index.html` is a single-file React 18 app
-  loaded as native ES modules from a CDN (`esm.sh`) with `htm` for JSX-style
-  templates and Tailwind via CDN.
-- **`server.mjs`** is a tiny Node server (built-ins only) that serves the page
-  and **proxies `/api/*` to the backend**. This sidesteps the fact that the
-  backend currently has no CORS config — the browser only ever talks to this
-  server (same origin), and the proxy forwards calls server-to-server.
-
-## Run it
+## Run
 
 ```bash
-# 1. Start the backend infra + app (from repo root / Backend)
+# 1. Start the backend first (from repo root)
 docker compose up -d
-cd ../Backend && ./gradlew bootRun        # backend on :8080
+cd Backend && ./gradlew bootRun
 
-# 2. Start this demo (from Frontend/)
-cd ../Frontend && node server.mjs         # demo on http://localhost:5173
+# 2. Start the frontend
+cd Frontend
+npm install
+npm run dev        # → http://localhost:5173
 ```
 
-Then open <http://localhost:5173> and register/log in.
+`.env.local` already points at `http://localhost:8080/api/v1`.
 
-Override the backend target if needed:
+## Features
 
-```bash
-BACKEND_URL=http://localhost:9090 PORT=3000 node server.mjs
+- **Explore** — Instagram-style feed of itineraries other users chose to post. Like, save, open any post to view its full day-by-day itinerary on a map.
+- **Trip planner** — create trips, invite members by email (OWNER/EDITOR/VIEWER roles), build day-by-day itineraries with categories, costs, and booking links. Real-time sync over WebSocket.
+- **Maps** — Leaflet + OpenStreetMap background map on trip and post pages; activity locations geocoded via Nominatim (free, cached in localStorage).
+- **Bookings** — deep-links to Airbnb, Booking.com, Google Flights, Skyscanner, Omio, Trainline, Rentalcars, etc., pre-filled with your destination and dates; plus a booking tracker fed by ACCOMMODATION/TRANSPORT itinerary activities.
+- **Auth** — email/password + Google OAuth2, JWT with auto-refresh.
+
+## Structure
+
+```
+src/
+├── api/          Axios client (interceptors, token refresh) + one file per domain
+├── components/   ui/ (Button, Input, Modal…), layout/, map/TripMap
+├── features/     auth/, trips/, itinerary/, explore/, bookings/
+├── hooks/        useTripSocket, useGeocode
+├── lib/          queryKeys, errors, bookingLinks, geocode, utils
+├── pages/        one file per route (thin — delegate to features/)
+├── stores/       authStore, toastStore (Zustand)
+└── types/        api.ts — mirrors backend DTOs
 ```
 
-## What it covers
-
-Auth (register / login / logout / refresh), trips (list / create / edit /
-delete), members (list / remove / leave), invites (send / list / revoke), and
-the full itinerary (days + activities with categories, cost, booking links).
-Role-based controls follow `myRole`.
-
-Not included (deliberately, per the "wire it last" note in `FRONTEND.md`):
-real-time WebSocket updates and the Google OAuth callback page — the "Continue
-with Google" button kicks off the flow but the callback lands on the backend's
-configured `FRONTEND_URL`.
+The old static prototype lives in `_prototype/`.
