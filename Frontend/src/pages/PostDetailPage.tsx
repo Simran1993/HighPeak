@@ -95,9 +95,20 @@ export function PostDetailPage() {
         <div className="absolute inset-x-0 bottom-0 mx-auto max-w-4xl px-4 pb-4">
           <h1 className="text-3xl font-extrabold tracking-tight drop-shadow-sm">{post.tripTitle}</h1>
           <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-medium text-gray-600">
-            <span className="flex items-center gap-1">
-              <MapPin className="h-4 w-4" /> {post.destination ?? 'Destination TBD'}
-            </span>
+            {post.destination ? (
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(post.destination)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1 hover:text-brand-700 hover:underline"
+              >
+                <MapPin className="h-4 w-4" /> {post.destination}
+              </a>
+            ) : (
+              <span className="flex items-center gap-1">
+                <MapPin className="h-4 w-4" /> Destination TBD
+              </span>
+            )}
             <span className="flex items-center gap-1">
               <CalendarDays className="h-4 w-4" /> {formatDateRange(post.startDate, post.endDate)}
             </span>
@@ -213,9 +224,15 @@ export function PostDetailPage() {
                                 </Link>
                               )}
                             </div>
-                            <p className="mt-0.5 flex items-center gap-1 text-sm text-gray-500">
+                            <a
+                              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a.location)}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              title="Open in Google Maps"
+                              className="mt-0.5 flex items-center gap-1 text-sm text-gray-500 hover:text-brand-600 hover:underline"
+                            >
                               <MapPin className="h-3.5 w-3.5 shrink-0" /> {a.location}
-                            </p>
+                            </a>
                             {a.notes && <p className="mt-1 text-sm text-gray-600">{a.notes}</p>}
                             {a.bookingLink && (
                               <a

@@ -13,6 +13,7 @@ import { SavedPostsPage } from '@/pages/SavedPostsPage';
 import { InviteAcceptPage } from '@/pages/InviteAcceptPage';
 import { FlightTrackerPage } from '@/pages/FlightTrackerPage';
 import { ProfilePage } from '@/pages/ProfilePage';
+import { VaultPage } from '@/pages/VaultPage';
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -31,6 +32,7 @@ export const router = createBrowserRouter([
       { path: '/saved', element: <SavedPostsPage /> },
       { path: '/flights', element: <FlightTrackerPage /> },
       { path: '/users/:userId', element: <ProfilePage /> },
+      { path: '/vault', element: <VaultPage /> },
       { path: '/dashboard', element: <DashboardPage /> },
       { path: '/trips/new', element: <NewTripPage /> },
       { path: '/trips/:id', element: <TripDetailPage /> },

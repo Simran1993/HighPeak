@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Bookmark, Compass, LogOut, Map, Mountain, Plane, Plus, WifiOff } from 'lucide-react';
+import { Bookmark, Compass, Lock, LogOut, Map, Mountain, Plane, Plus, WifiOff } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { authApi } from '@/api/auth';
 import { Avatar } from '@/components/ui/Badge';
@@ -12,6 +12,7 @@ const navItems = [
   { to: '/dashboard', label: 'My Trips', icon: Map },
   { to: '/flights', label: 'Flights', icon: Plane },
   { to: '/saved', label: 'Saved', icon: Bookmark },
+  { to: '/vault', label: 'Vault', icon: Lock },
 ];
 
 function useOnline() {

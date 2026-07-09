@@ -179,6 +179,30 @@ export interface UpdatePostRequest {
   coverImageUrl?: string;
 }
 
+// Messages (trip chat)
+export interface MessageResponse {
+  id: string;
+  tripId: string;
+  userId: string;
+  authorName: string;
+  authorAvatarUrl: string | null;
+  content: string;
+  attachmentId: string | null;
+  attachmentName: string | null;
+  attachmentType: string | null;
+  attachmentSize: number | null;
+  createdAt: string;
+}
+
+// Files / vault
+export interface FileMetadataResponse {
+  id: string;
+  filename: string;
+  contentType: string | null;
+  sizeBytes: number;
+  createdAt: string;
+}
+
 // WebSocket
 export type TripEventType =
   | 'TRIP_UPDATED'
@@ -189,7 +213,8 @@ export type TripEventType =
   | 'DAY_DELETED'
   | 'ACTIVITY_ADDED'
   | 'ACTIVITY_UPDATED'
-  | 'ACTIVITY_DELETED';
+  | 'ACTIVITY_DELETED'
+  | 'MESSAGE_ADDED';
 
 export interface TripEvent {
   type: TripEventType;

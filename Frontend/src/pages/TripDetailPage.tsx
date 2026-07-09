@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CalendarDays, Globe2, MapPin, Pencil, Share2, Trash2, Users } from 'lucide-react';
+import { CalendarDays, Globe2, MapPin, MessageCircle, Pencil, Share2, Trash2, Users } from 'lucide-react';
 import { tripsApi } from '@/api/trips';
 import { itineraryApi } from '@/api/itinerary';
 import { queryKeys } from '@/lib/queryKeys';
@@ -10,6 +10,7 @@ import { TripMap, type MapPin as Pin } from '@/components/map/TripMap';
 import { ItineraryTab } from '@/features/itinerary/ItineraryTab';
 import { MembersTab } from '@/features/trips/MembersTab';
 import { BookingsTab } from '@/features/bookings/BookingsTab';
+import { ChatTab } from '@/features/chat/ChatTab';
 import { ShareTripDialog } from '@/features/explore/ShareTripDialog';
 import { TripForm } from '@/features/trips/TripForm';
 import { Modal } from '@/components/ui/Modal';
@@ -20,7 +21,7 @@ import { cn, formatDateRange, formatTime } from '@/lib/utils';
 import { handleApiError } from '@/lib/errors';
 import { toast } from '@/stores/toastStore';
 
-type Tab = 'itinerary' | 'bookings' | 'members';
+type Tab = 'itinerary' | 'bookings' | 'chat' | 'members';
 
 export function TripDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -87,6 +88,7 @@ export function TripDetailPage() {
   const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
     { key: 'itinerary', label: 'Itinerary', icon: <CalendarDays className="h-4 w-4" /> },
     { key: 'bookings', label: 'Bookings', icon: <Globe2 className="h-4 w-4" /> },
+    { key: 'chat', label: 'Chat', icon: <MessageCircle className="h-4 w-4" /> },
     { key: 'members', label: `Members (${trip.memberCount})`, icon: <Users className="h-4 w-4" /> },
   ];
 
@@ -107,9 +109,20 @@ export function TripDetailPage() {
               </div>
               <h1 className="text-3xl font-extrabold tracking-tight drop-shadow-sm">{trip.title}</h1>
               <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-medium text-gray-600">
-                <span className="flex items-center gap-1">
-                  <MapPin className="h-4 w-4" /> {trip.destination ?? 'Destination TBD'}
-                </span>
+                {trip.destination ? (
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(trip.destination)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-1 hover:text-brand-700 hover:underline"
+                  >
+                    <MapPin className="h-4 w-4" /> {trip.destination}
+                  </a>
+                ) : (
+                  <span className="flex items-center gap-1">
+                    <MapPin className="h-4 w-4" /> Destination TBD
+                  </span>
+                )}
                 <span className="flex items-center gap-1">
                   <CalendarDays className="h-4 w-4" /> {formatDateRange(trip.startDate, trip.endDate)}
                 </span>
@@ -168,6 +181,7 @@ export function TripDetailPage() {
       <div className="py-6">
         {tab === 'itinerary' && <ItineraryTab tripId={trip.id} canEdit={canEdit} />}
         {tab === 'bookings' && <BookingsTab trip={trip} />}
+        {tab === 'chat' && <ChatTab tripId={trip.id} />}
         {tab === 'members' && <MembersTab tripId={trip.id} myRole={trip.myRole} />}
       </div>
 

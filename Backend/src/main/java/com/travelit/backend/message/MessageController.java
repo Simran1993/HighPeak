@@ -1,5 +1,6 @@
 package com.travelit.backend.message;
 
+import com.travelit.backend.file.dto.FileMetadataResponse;
 import com.travelit.backend.message.dto.CreateMessageRequest;
 import com.travelit.backend.message.dto.MessageResponse;
 import jakarta.validation.Valid;
@@ -8,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -31,5 +33,14 @@ public class MessageController {
                                                        @AuthenticationPrincipal String userId) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(messageService.postMessage(tripId, request, UUID.fromString(userId)));
+    }
+
+    /** Upload a chat attachment; returns metadata to reference in the message. */
+    @PostMapping("/attachments")
+    public ResponseEntity<FileMetadataResponse> uploadAttachment(@PathVariable UUID tripId,
+                                                                 @RequestParam("file") MultipartFile file,
+                                                                 @AuthenticationPrincipal String userId) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(messageService.uploadAttachment(tripId, file, UUID.fromString(userId)));
     }
 }

@@ -3,8 +3,10 @@ package com.travelit.backend.message;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface MessageRepository extends JpaRepository<Message, UUID> {
     List<Message> findByTrip_IdOrderByCreatedAtAsc(UUID tripId);
+    Optional<Message> findByAttachment_Id(UUID attachmentId);
 }

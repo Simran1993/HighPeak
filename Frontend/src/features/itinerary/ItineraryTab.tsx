@@ -310,9 +310,15 @@ export function ItineraryTab({ tripId, canEdit }: { tripId: string; canEdit: boo
                               </Link>
                             )}
                           </div>
-                          <p className="mt-0.5 flex items-center gap-1 text-sm text-gray-500">
+                          <a
+                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a.location)}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            title="Open in Google Maps"
+                            className="mt-0.5 flex items-center gap-1 text-sm text-gray-500 hover:text-brand-600 hover:underline"
+                          >
                             <MapPin className="h-3.5 w-3.5 shrink-0" /> {a.location}
-                          </p>
+                          </a>
                           {a.notes && <p className="mt-1 text-sm text-gray-600">{a.notes}</p>}
                           {a.bookingLink && (
                             <a

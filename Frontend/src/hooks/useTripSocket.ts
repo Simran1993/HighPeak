@@ -42,6 +42,9 @@ export function useTripSocket(tripId: string | undefined) {
             case 'ACTIVITY_DELETED':
               queryClient.invalidateQueries({ queryKey: queryKeys.itinerary(tripId) });
               break;
+            case 'MESSAGE_ADDED':
+              queryClient.invalidateQueries({ queryKey: queryKeys.messages(tripId) });
+              break;
           }
         });
       },

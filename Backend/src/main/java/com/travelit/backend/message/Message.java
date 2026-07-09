@@ -1,5 +1,6 @@
 package com.travelit.backend.message;
 
+import com.travelit.backend.file.StoredFile;
 import com.travelit.backend.trip.Trip;
 import com.travelit.backend.user.User;
 import jakarta.persistence.*;
@@ -32,6 +33,10 @@ public class Message {
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "attachment_id")
+    private StoredFile attachment;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
