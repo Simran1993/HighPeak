@@ -32,6 +32,9 @@ public class Activity {
 
     private LocalTime startTime;
 
+    /** Optional end/arrival time (e.g. flight landing) — used for duration display. */
+    private LocalTime endTime;
+
     private String location;
 
     private String notes;

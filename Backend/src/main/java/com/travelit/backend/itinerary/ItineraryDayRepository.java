@@ -9,4 +9,5 @@ import java.util.UUID;
 public interface ItineraryDayRepository extends JpaRepository<ItineraryDay, UUID> {
     List<ItineraryDay> findByTrip_IdOrderByDateAsc(UUID tripId);
     boolean existsByTrip_IdAndDate(UUID tripId, LocalDate date);
+    long countByTrip_Id(UUID tripId);
 }

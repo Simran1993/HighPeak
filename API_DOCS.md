@@ -555,3 +555,38 @@ All errors return this shape:
 3. On every protected request: **Authorization tab → Type: Bearer Token → paste the token**
 4. For any `POST` / `PATCH` with a body: **Body tab → raw → JSON** (the dropdown next to the format selector)
 5. Access tokens expire — re-login to get a fresh one if you start getting `401`
+
+---
+
+## 9. Posts (Explore)
+
+All endpoints require a JWT token. A post makes a trip's itinerary publicly viewable in the Explore feed. Creating a post sets the trip's status to `PUBLISHED`; deleting it reverts to `DRAFT`. One post per trip.
+
+| Method | Path | Notes |
+|--------|------|-------|
+| `POST` | `/posts` | Body: `{ "tripId": UUID, "caption"?: string (≤2000), "coverImageUrl"?: string }`. Requires OWNER/EDITOR on the trip. `201` → PostResponse. `409` if already posted. |
+| `GET` | `/posts?page=0&size=20` | Explore feed, newest first (size capped at 50). `200` → PostResponse[] |
+| `GET` | `/posts/mine` | Posts authored by me |
+| `GET` | `/posts/saved` | Posts I bookmarked |
+| `GET` | `/posts/{id}` | Single post |
+| `GET` | `/posts/by-trip/{tripId}` | Post for a trip (404 if none) |
+| `GET` | `/posts/{id}/itinerary` | **Read-only public itinerary** — DayResponse[], no trip membership required |
+| `PATCH` | `/posts/{id}` | Update caption/cover. Author only |
+| `DELETE` | `/posts/{id}` | Remove from Explore (trip is kept). Author only |
+| `POST` / `DELETE` | `/posts/{id}/like` | Like / unlike (idempotent) |
+| `POST` / `DELETE` | `/posts/{id}/save` | Save / unsave (idempotent) |
+
+**PostResponse:**
+```json
+{
+  "id": "…", "tripId": "…", "caption": "…", "coverImageUrl": null,
+  "authorId": "…", "authorName": "John Doe", "authorAvatarUrl": null,
+  "tripTitle": "Japan 2025", "tripDescription": "…", "destination": "Tokyo, Japan",
+  "startDate": "2025-03-25", "endDate": "2025-04-05",
+  "dayCount": 10, "likeCount": 42, "saveCount": 7,
+  "likedByMe": true, "savedByMe": false,
+  "createdAt": "2025-01-15T10:30:00Z"
+}
+```
+
+Migration: `V8__create_posts_tables.sql` (posts, post_likes, post_saves).

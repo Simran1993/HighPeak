@@ -10,6 +10,7 @@ public record UserResponse(
         String email,
         String name,
         String avatarUrl,
+        String bio,
         AuthProvider authProvider,
         boolean emailVerified
 ) {
@@ -19,6 +20,7 @@ public record UserResponse(
                 user.getEmail(),
                 user.getName(),
                 user.getAvatarUrl(),
+                user.getBio(),
                 user.getAuthProvider(),
                 user.isEmailVerified()
         );
