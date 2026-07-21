@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -28,6 +29,14 @@ public class UserController {
                                                  @AuthenticationPrincipal String userId) {
         return ResponseEntity.ok(UserResponse.from(
                 userService.updateProfile(UUID.fromString(userId), request)));
+    }
+
+    /** Upload a new profile picture (multipart image, max 10 MB). */
+    @PostMapping("/me/avatar")
+    public ResponseEntity<UserResponse> uploadAvatar(@RequestParam("file") MultipartFile file,
+                                                     @AuthenticationPrincipal String userId) {
+        return ResponseEntity.ok(UserResponse.from(
+                userService.updateAvatar(UUID.fromString(userId), file)));
     }
 
     /** Public profile — no email or auth details. */

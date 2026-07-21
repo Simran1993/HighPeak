@@ -16,6 +16,7 @@ export interface UserResponse {
   name: string;
   avatarUrl: string | null;
   bio: string | null;
+  interests: string[];
   authProvider: 'LOCAL' | 'GOOGLE';
   emailVerified: boolean;
 }
@@ -26,6 +27,7 @@ export interface ProfileResponse {
   name: string;
   avatarUrl: string | null;
   bio: string | null;
+  interests: string[];
   joinedAt: string;
 }
 
@@ -33,6 +35,7 @@ export interface UpdateProfileRequest {
   name?: string;
   bio?: string;
   avatarUrl?: string;
+  interests?: string[];
 }
 
 // Trips

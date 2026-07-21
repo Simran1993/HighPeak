@@ -20,6 +20,21 @@ public class FileController {
 
     private final FileStorageService fileStorageService;
 
+    /** Public: profile pictures. Served without authentication, cache-friendly. */
+    @GetMapping("/avatars/{id}")
+    public ResponseEntity<byte[]> avatar(@PathVariable UUID id) {
+        var file = fileStorageService.downloadAvatar(id);
+        MediaType mediaType = MediaType.IMAGE_JPEG;
+        try {
+            if (file.contentType() != null) mediaType = MediaType.parseMediaType(file.contentType());
+        } catch (Exception ignored) {
+        }
+        return ResponseEntity.ok()
+                .contentType(mediaType)
+                .header(HttpHeaders.CACHE_CONTROL, "public, max-age=86400")
+                .body(file.bytes());
+    }
+
     /** Download a file (decrypted on the fly). Access rules depend on the file's purpose. */
     @GetMapping("/{id}")
     public ResponseEntity<byte[]> download(@PathVariable UUID id,

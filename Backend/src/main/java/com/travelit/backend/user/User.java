@@ -33,6 +33,9 @@ public class User {
 
     private String bio;
 
+    /** Comma-separated travel interest tags. */
+    private String interests;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private AuthProvider authProvider;
