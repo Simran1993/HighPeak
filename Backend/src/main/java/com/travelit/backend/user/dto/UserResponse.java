@@ -2,6 +2,9 @@ package com.travelit.backend.user.dto;
 
 import com.travelit.backend.user.AuthProvider;
 import com.travelit.backend.user.User;
+import com.travelit.backend.user.UserInterests;
+
+import java.util.List;
 
 import java.util.UUID;
 
@@ -11,6 +14,7 @@ public record UserResponse(
         String name,
         String avatarUrl,
         String bio,
+        List<String> interests,
         AuthProvider authProvider,
         boolean emailVerified
 ) {
@@ -21,6 +25,7 @@ public record UserResponse(
                 user.getName(),
                 user.getAvatarUrl(),
                 user.getBio(),
+                UserInterests.parse(user.getInterests()),
                 user.getAuthProvider(),
                 user.isEmailVerified()
         );

@@ -3,7 +3,7 @@ package com.travelit.backend.file;
 import com.travelit.backend.file.dto.FileMetadataResponse;
 import com.travelit.backend.message.MessageRepository;
 import com.travelit.backend.trip.TripMemberRepository;
-import com.travelit.backend.user.UserService;
+import com.travelit.backend.user.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
@@ -24,7 +24,7 @@ public class FileStorageService {
 
     private final StoredFileRepository fileRepository;
     private final FileCryptoService crypto;
-    private final UserService userService;
+    private final UserRepository userRepository;
     private final MessageRepository messageRepository;
     private final TripMemberRepository tripMemberRepository;
 
@@ -45,7 +45,8 @@ public class FileStorageService {
         }
 
         StoredFile file = StoredFile.builder()
-                .owner(userService.getById(ownerId))
+                .owner(userRepository.findById(ownerId)
+                        .orElseThrow(() -> new EntityNotFoundException("User not found")))
                 .filename(sanitize(upload.getOriginalFilename()))
                 .contentType(upload.getContentType())
                 .sizeBytes(upload.getSize())
@@ -93,12 +94,28 @@ public class FileStorageService {
         return file;
     }
 
+    /** Avatars are public — anyone can view a profile picture. No auth required. */
+    @Transactional(readOnly = true)
+    public DecryptedFile downloadAvatar(UUID fileId) {
+        StoredFile file = findOrThrow(fileId);
+        if (file.getPurpose() != FilePurpose.AVATAR) {
+            throw new EntityNotFoundException("File not found");
+        }
+        return new DecryptedFile(
+                file.getFilename(),
+                file.getContentType(),
+                crypto.decrypt(file.getData(), file.getIv()));
+    }
+
     private void enforceAccess(StoredFile file, UUID requesterId) {
         boolean isOwner = file.getOwner().getId().equals(requesterId);
         switch (file.getPurpose()) {
             case VAULT_DOCUMENT -> {
                 // Vault documents are strictly private to their owner.
                 if (!isOwner) throw new AccessDeniedException("This document is private");
+            }
+            case AVATAR -> {
+                // public anyway via /files/avatars/{id}
             }
             case MESSAGE_ATTACHMENT -> {
                 if (isOwner) return;
