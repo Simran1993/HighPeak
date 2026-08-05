@@ -19,7 +19,3 @@ logging:
     root: WARN
     com.travelit.backend: INFO
 
-management:
-  health:
-    mail:
-      enabled: false
