@@ -36,10 +36,16 @@ public class FileStorageService {
         if (upload.getSize() > MAX_SIZE_BYTES) {
             throw new IllegalArgumentException("File exceeds the 10 MB limit");
         }
-        byte[] iv = crypto.newIv();
-        byte[] ciphertext;
+        // Avatars are served publicly (no auth), so encrypting them adds no security
+        // but breaks whenever the encryption key changes. Store avatars as-is and keep
+        // encryption for genuinely private files (vault documents, chat attachments).
+        // An empty iv marks a file as stored in plaintext.
+        boolean encrypt = purpose != FilePurpose.AVATAR;
+        byte[] iv = encrypt ? crypto.newIv() : new byte[0];
+        byte[] data;
         try {
-            ciphertext = crypto.encrypt(upload.getBytes(), iv);
+            byte[] raw = upload.getBytes();
+            data = encrypt ? crypto.encrypt(raw, iv) : raw;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -52,7 +58,7 @@ public class FileStorageService {
                 .sizeBytes(upload.getSize())
                 .purpose(purpose)
                 .iv(iv)
-                .data(ciphertext)
+                .data(data)
                 .build();
         return FileMetadataResponse.from(fileRepository.saveAndFlush(file));
     }
@@ -101,10 +107,12 @@ public class FileStorageService {
         if (file.getPurpose() != FilePurpose.AVATAR) {
             throw new EntityNotFoundException("File not found");
         }
-        return new DecryptedFile(
-                file.getFilename(),
-                file.getContentType(),
-                crypto.decrypt(file.getData(), file.getIv()));
+        // Empty iv => stored in plaintext (current behaviour). Older avatars that were
+        // encrypted still decrypt via their iv.
+        byte[] bytes = file.getIv().length == 0
+                ? file.getData()
+                : crypto.decrypt(file.getData(), file.getIv());
+        return new DecryptedFile(file.getFilename(), file.getContentType(), bytes);
     }
 
     private void enforceAccess(StoredFile file, UUID requesterId) {
