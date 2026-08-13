@@ -9,6 +9,8 @@ import com.travelit.backend.websocket.TripEventPublisher;
 import com.travelit.backend.websocket.TripEventType;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class InviteService {
 
+    private static final Logger log = LoggerFactory.getLogger(InviteService.class);
+
     private final TripInviteRepository inviteRepository;
     private final TripRepository tripRepository;
     private final TripMemberRepository tripMemberRepository;
@@ -32,6 +36,9 @@ public class InviteService {
 
     @Value("${app.invite.expiration-hours}")
     private int expirationHours;
+
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
 
     @Transactional
     public InviteResponse sendInvite(UUID tripId, InviteRequest request, UUID invitedById) {
@@ -61,9 +68,16 @@ public class InviteService {
                 .build();
         invite = inviteRepository.save(invite);
 
-        mailService.sendInviteEmail(normalizedEmail, trip.getTitle(), invitedBy.getName(), invite.getToken());
+        // Best-effort email. Outbound SMTP is blocked on some hosting plans, so a
+        // mail failure must not fail the invite — the link is returned either way.
+        try {
+            mailService.sendInviteEmail(normalizedEmail, trip.getTitle(), invitedBy.getName(), invite.getToken());
+        } catch (Exception e) {
+            log.warn("Invite {} created but email to {} could not be sent: {}",
+                    invite.getId(), normalizedEmail, e.getMessage());
+        }
 
-        return InviteResponse.from(invite);
+        return InviteResponse.from(invite, frontendUrl);
     }
 
     @Transactional
@@ -137,7 +151,7 @@ public class InviteService {
             throw new AccessDeniedException("Viewers cannot view invites");
         }
         return inviteRepository.findByTrip_IdAndStatus(tripId, InviteStatus.PENDING).stream()
-                .map(InviteResponse::from)
+                .map(invite -> InviteResponse.from(invite, frontendUrl))
                 .toList();
     }
 

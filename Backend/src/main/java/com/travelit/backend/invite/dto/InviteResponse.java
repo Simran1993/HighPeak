@@ -14,9 +14,10 @@ public record InviteResponse(
         String invitedByName,
         InviteStatus status,
         OffsetDateTime expiresAt,
-        OffsetDateTime createdAt
+        OffsetDateTime createdAt,
+        String inviteLink
 ) {
-    public static InviteResponse from(TripInvite invite) {
+    public static InviteResponse from(TripInvite invite, String frontendUrl) {
         return new InviteResponse(
                 invite.getId(),
                 invite.getTrip().getId(),
@@ -25,7 +26,8 @@ public record InviteResponse(
                 invite.getInvitedBy().getName(),
                 invite.getStatus(),
                 invite.getExpiresAt(),
-                invite.getCreatedAt()
+                invite.getCreatedAt(),
+                frontendUrl + "/invites/accept?token=" + invite.getToken()
         );
     }
 }
