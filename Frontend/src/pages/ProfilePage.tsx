@@ -10,6 +10,7 @@ import { postsApi } from '@/api/posts';
 import { queryKeys } from '@/lib/queryKeys';
 import { useAuthStore } from '@/stores/authStore';
 import { PostCard } from '@/features/explore/PostCard';
+import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { Avatar } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Field, Input, Textarea } from '@/components/ui/Input';
@@ -312,6 +313,13 @@ export function ProfilePage() {
           )
         )}
       </div>
+
+      {/* Notifications (own profile only) */}
+      {isMe && (
+        <div className="mt-8">
+          <NotificationCenter />
+        </div>
+      )}
 
       {/* Posts */}
       <h2 className="mb-4 mt-8 text-lg font-bold">{isMe ? 'My posts' : 'Posts'}</h2>

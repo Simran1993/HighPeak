@@ -6,6 +6,8 @@ import com.travelit.backend.itinerary.dto.DayResponse;
 import com.travelit.backend.post.dto.CreatePostRequest;
 import com.travelit.backend.post.dto.PostResponse;
 import com.travelit.backend.post.dto.UpdatePostRequest;
+import com.travelit.backend.notification.NotificationService;
+import com.travelit.backend.notification.NotificationType;
 import com.travelit.backend.trip.MemberRole;
 import com.travelit.backend.trip.Trip;
 import com.travelit.backend.trip.TripMember;
@@ -34,6 +36,7 @@ public class PostService {
     private final ItineraryDayRepository dayRepository;
     private final ActivityRepository activityRepository;
     private final UserService userService;
+    private final NotificationService notificationService;
 
     @Transactional
     public PostResponse create(CreatePostRequest request, UUID userId) {
@@ -135,10 +138,14 @@ public class PostService {
 
     @Transactional
     public void like(UUID postId, UUID userId) {
-        findPostOrThrow(postId);
+        Post post = findPostOrThrow(postId);
         PostReactionId id = new PostReactionId(postId, userId);
         if (!likeRepository.existsById(id)) {
             likeRepository.save(PostLike.builder().id(id).build());
+            User liker = userService.getById(userId);
+            notificationService.notify(post.getAuthor(), liker, NotificationType.POST_LIKE,
+                    liker.getName() + " liked your trip \"" + post.getTrip().getTitle() + "\"",
+                    "/posts/" + postId);
         }
     }
 

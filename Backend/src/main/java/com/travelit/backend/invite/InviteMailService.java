@@ -23,7 +23,7 @@ public class InviteMailService {
                 "Hi,\n\n" +
                 inviterName + " has invited you to collaborate on the trip \"" + tripTitle + "\".\n\n" +
                 "Accept the invitation here:\n" +
-                frontendUrl + "/invites/accept?token=" + token + "\n\n" +
+                frontendUrl + "/invites/" + token + "/accept" + "\n\n" +
                 "This link expires in 7 days.\n\n" +
                 "If you don't have an account yet, you'll be asked to register first — " +
                 "your invite will be applied automatically."

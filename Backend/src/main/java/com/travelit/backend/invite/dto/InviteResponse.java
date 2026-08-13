@@ -27,7 +27,7 @@ public record InviteResponse(
                 invite.getStatus(),
                 invite.getExpiresAt(),
                 invite.getCreatedAt(),
-                frontendUrl + "/invites/accept?token=" + invite.getToken()
+                frontendUrl + "/invites/" + invite.getToken() + "/accept"
         );
     }
 }

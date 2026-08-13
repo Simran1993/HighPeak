@@ -5,6 +5,8 @@ import { useAuthStore } from '@/stores/authStore';
 import { authApi } from '@/api/auth';
 import { Avatar } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { useNotificationSocket } from '@/hooks/useNotificationSocket';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -33,6 +35,7 @@ export function AppLayout() {
   const { user, refreshToken, logout } = useAuthStore();
   const navigate = useNavigate();
   const online = useOnline();
+  useNotificationSocket();
 
   const handleLogout = async () => {
     try {
@@ -80,6 +83,7 @@ export function AppLayout() {
             <Button size="sm" onClick={() => navigate('/trips/new')}>
               <Plus className="h-4 w-4" /> New trip
             </Button>
+            <NotificationBell />
             {user && (
               <Link
                 to={`/users/${user.id}`}
