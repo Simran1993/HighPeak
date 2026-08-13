@@ -16,4 +16,6 @@ export const queryKeys = {
   profile: (userId: string) => ['profile', userId] as const,
   postItinerary: (id: string) => ['posts', id, 'itinerary'] as const,
   geocode: (q: string) => ['geocode', q] as const,
+  notifications: () => ['notifications'] as const,
+  unreadCount: () => ['notifications', 'unread'] as const,
 };

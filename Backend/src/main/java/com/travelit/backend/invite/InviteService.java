@@ -2,8 +2,11 @@ package com.travelit.backend.invite;
 
 import com.travelit.backend.invite.dto.InviteRequest;
 import com.travelit.backend.invite.dto.InviteResponse;
+import com.travelit.backend.notification.NotificationService;
+import com.travelit.backend.notification.NotificationType;
 import com.travelit.backend.trip.*;
 import com.travelit.backend.user.User;
+import com.travelit.backend.user.UserRepository;
 import com.travelit.backend.user.UserService;
 import com.travelit.backend.websocket.TripEventPublisher;
 import com.travelit.backend.websocket.TripEventType;
@@ -31,8 +34,10 @@ public class InviteService {
     private final TripRepository tripRepository;
     private final TripMemberRepository tripMemberRepository;
     private final UserService userService;
+    private final UserRepository userRepository;
     private final InviteMailService mailService;
     private final TripEventPublisher eventPublisher;
+    private final NotificationService notificationService;
 
     @Value("${app.invite.expiration-hours}")
     private int expirationHours;
@@ -77,6 +82,13 @@ public class InviteService {
                     invite.getId(), normalizedEmail, e.getMessage());
         }
 
+        // In-app notification for invitees who already have an account.
+        final String inviteToken = invite.getToken();
+        userRepository.findByEmail(normalizedEmail).ifPresent(recipient ->
+                notificationService.notify(recipient, invitedBy, NotificationType.TRIP_INVITE,
+                        invitedBy.getName() + " invited you to join \"" + trip.getTitle() + "\"",
+                        "/invites/" + inviteToken + "/accept"));
+
         return InviteResponse.from(invite, frontendUrl);
     }
 
@@ -114,6 +126,10 @@ public class InviteService {
 
         invite.setStatus(InviteStatus.ACCEPTED);
         inviteRepository.save(invite);
+
+        notificationService.notify(invite.getInvitedBy(), user, NotificationType.INVITE_ACCEPTED,
+                user.getName() + " accepted your invite to \"" + invite.getTrip().getTitle() + "\"",
+                "/trips/" + tripId);
     }
 
     // Called after registration to auto-accept any pending invites for the new user's email
@@ -140,6 +156,9 @@ public class InviteService {
                         Map.of("userId", user.getId(), "role", MemberRole.EDITOR), user.getId());
             }
             invite.setStatus(InviteStatus.ACCEPTED);
+            notificationService.notify(invite.getInvitedBy(), user, NotificationType.INVITE_ACCEPTED,
+                    user.getName() + " accepted your invite to \"" + invite.getTrip().getTitle() + "\"",
+                    "/trips/" + tripId);
         }
         inviteRepository.saveAll(pending);
     }

@@ -227,6 +227,21 @@ export interface TripEvent {
   timestamp: string;
 }
 
+// Notifications
+export type NotificationType = 'TRIP_INVITE' | 'POST_LIKE' | 'INVITE_ACCEPTED';
+
+export interface NotificationResponse {
+  id: string;
+  type: NotificationType;
+  message: string;
+  link: string | null;
+  actorId: string | null;
+  actorName: string | null;
+  actorAvatarUrl: string | null;
+  read: boolean;
+  createdAt: string;
+}
+
 // API errors
 export interface ErrorResponse {
   status: number;
