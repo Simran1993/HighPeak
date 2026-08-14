@@ -48,9 +48,6 @@ dependencies {
     // OpenAPI / Swagger UI
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'
 
-    // Anthropic (Claude) API — AI itinerary generation
-    implementation 'com.anthropic:anthropic-java:2.34.0'
-
     // Lombok
     compileOnly         'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'

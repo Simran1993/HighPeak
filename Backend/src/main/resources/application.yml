@@ -58,8 +58,9 @@ app:
     expiration-hours: 168
 
   ai:
-    anthropic-api-key: ${ANTHROPIC_API_KEY:}
-    model: ${ANTHROPIC_MODEL:claude-opus-5}
+    groq-api-key: ${GROQ_API_KEY:}
+    groq-base-url: ${GROQ_BASE_URL:https://api.groq.com/openai/v1}
+    model: ${GROQ_MODEL:llama-3.3-70b-versatile}
 
 springdoc:
   api-docs:

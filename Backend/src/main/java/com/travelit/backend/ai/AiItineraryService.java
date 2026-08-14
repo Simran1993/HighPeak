@@ -1,12 +1,15 @@
 package com.travelit.backend.ai;
 
-import com.anthropic.client.AnthropicClient;
-import com.anthropic.models.messages.MessageCreateParams;
-import com.anthropic.models.messages.StructuredMessageCreateParams;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.travelit.backend.ai.dto.GenerateItineraryRequest;
 import com.travelit.backend.ai.dto.GeneratedActivity;
 import com.travelit.backend.ai.dto.GeneratedDay;
 import com.travelit.backend.ai.dto.GeneratedItinerary;
+import com.travelit.backend.ai.groq.GroqChatRequest;
+import com.travelit.backend.ai.groq.GroqChatResponse;
+import com.travelit.backend.ai.groq.GroqMessage;
+import com.travelit.backend.ai.groq.GroqResponseFormat;
 import com.travelit.backend.itinerary.Activity;
 import com.travelit.backend.itinerary.ActivityCategory;
 import com.travelit.backend.itinerary.ActivityRepository;
@@ -29,6 +32,9 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -52,16 +58,41 @@ public class AiItineraryService {
             itinerary. Keep travel times sensible for the destination, avoid overlapping \
             activities on the same day, and order each day's activities by start time. Every \
             day in the trip's date range should have at least one activity unless the \
-            traveler's request says otherwise. Respond only with the structured itinerary.""";
+            traveler's request says otherwise.
 
-    private final AnthropicClient anthropicClient;
+            Respond with a single JSON object only — no markdown, no code fences, no \
+            commentary before or after it — matching exactly this shape:
+            {
+              "summary": "1-2 sentence summary of the overall trip plan",
+              "days": [
+                {
+                  "dayNumber": 1,
+                  "date": "YYYY-MM-DD",
+                  "theme": "short theme or title for the day",
+                  "activities": [
+                    {
+                      "title": "short activity title",
+                      "startTime": "HH:mm in 24-hour time",
+                      "endTime": "HH:mm in 24-hour time, or null if not applicable",
+                      "location": "location or venue name",
+                      "notes": "useful notes, tips, or booking reminders",
+                      "category": "one of TRANSPORT, ACCOMMODATION, FOOD, SIGHTSEEING, ACTIVITY, SHOPPING, OTHER",
+                      "estimatedCost": 0.0
+                    }
+                  ]
+                }
+              ]
+            }""";
+
+    private final RestClient groqRestClient;
+    private final ObjectMapper objectMapper;
     private final TripRepository tripRepository;
     private final TripMemberRepository tripMemberRepository;
     private final ItineraryDayRepository dayRepository;
     private final ActivityRepository activityRepository;
     private final TripEventPublisher eventPublisher;
 
-    @Value("${app.ai.model:claude-opus-5}")
+    @Value("${app.ai.model:llama-3.3-70b-versatile}")
     private String model;
 
     @Transactional
@@ -70,9 +101,9 @@ public class AiItineraryService {
                 .orElseThrow(() -> new EntityNotFoundException("Trip not found"));
         validateEditor(tripId, userId);
 
-        GeneratedItinerary generated = requestItineraryFromClaude(trip, request);
+        GeneratedItinerary generated = requestItineraryFromGroq(trip, request);
         if (generated.days() == null || generated.days().isEmpty()) {
-            throw new AiGenerationException("Claude did not return any itinerary days");
+            throw new AiGenerationException("Groq did not return any itinerary days");
         }
 
         for (GeneratedDay genDay : generated.days()) {
@@ -107,29 +138,57 @@ public class AiItineraryService {
         return response;
     }
 
-    private GeneratedItinerary requestItineraryFromClaude(Trip trip, GenerateItineraryRequest request) {
-        StructuredMessageCreateParams<GeneratedItinerary> params = MessageCreateParams.builder()
-                .model(model)
-                .maxTokens(8000L)
-                .system(SYSTEM_PROMPT)
-                .outputConfig(GeneratedItinerary.class)
-                .addUserMessage(buildUserPrompt(trip, request))
-                .build();
+    private GeneratedItinerary requestItineraryFromGroq(Trip trip, GenerateItineraryRequest request) {
+        GroqChatRequest chatRequest = new GroqChatRequest(
+                model,
+                List.of(GroqMessage.system(SYSTEM_PROMPT), GroqMessage.user(buildUserPrompt(trip, request))),
+                GroqResponseFormat.JSON_OBJECT,
+                8000,
+                0.4
+        );
+
+        GroqChatResponse response;
+        try {
+            response = groqRestClient.post()
+                    .uri("/chat/completions")
+                    .body(chatRequest)
+                    .retrieve()
+                    .body(GroqChatResponse.class);
+        } catch (RestClientResponseException e) {
+            log.error("Groq itinerary generation failed: {} {}", e.getStatusCode(), e.getResponseBodyAsString(), e);
+            throw new AiGenerationException("Failed to reach Groq to generate the itinerary", e);
+        } catch (RestClientException e) {
+            log.error("Groq itinerary generation failed", e);
+            throw new AiGenerationException("Failed to reach Groq to generate the itinerary", e);
+        }
+
+        String content = response == null ? null : response.choices().stream()
+                .findFirst()
+                .map(choice -> choice.message().content())
+                .orElse(null);
+        if (!StringUtils.hasText(content)) {
+            throw new AiGenerationException(
+                    "Groq did not return a structured itinerary — the request may have been declined or rate-limited");
+        }
 
         try {
-            var response = anthropicClient.messages().create(params);
-            return response.content().stream()
-                    .flatMap(block -> block.text().stream())
-                    .map(typed -> typed.text())
-                    .findFirst()
-                    .orElseThrow(() -> new AiGenerationException(
-                            "Claude did not return a structured itinerary — the request may have been declined"));
-        } catch (AiGenerationException e) {
-            throw e;
-        } catch (RuntimeException e) {
-            log.error("Anthropic itinerary generation failed", e);
-            throw new AiGenerationException("Failed to reach Claude to generate the itinerary", e);
+            return objectMapper.readValue(stripCodeFence(content), GeneratedItinerary.class);
+        } catch (JsonProcessingException e) {
+            log.error("Groq returned unparseable itinerary JSON: {}", content, e);
+            throw new AiGenerationException("Groq returned a response that couldn't be parsed as a structured itinerary");
         }
+    }
+
+    /** Defensive cleanup in case the model wraps its JSON in a ```json code fence despite instructions. */
+    private String stripCodeFence(String content) {
+        String trimmed = content.trim();
+        if (trimmed.startsWith("```")) {
+            trimmed = trimmed.replaceFirst("^```[a-zA-Z]*\\s*", "");
+            if (trimmed.endsWith("```")) {
+                trimmed = trimmed.substring(0, trimmed.length() - 3);
+            }
+        }
+        return trimmed.trim();
     }
 
     private String buildUserPrompt(Trip trip, GenerateItineraryRequest request) {
@@ -171,7 +230,7 @@ public class AiItineraryService {
                 // fall through to error below
             }
         }
-        throw new AiGenerationException("Claude returned a day with no usable date (day " + genDay.dayNumber() + ")");
+        throw new AiGenerationException("Groq returned a day with no usable date (day " + genDay.dayNumber() + ")");
     }
 
     private LocalTime parseTime(String value) {
