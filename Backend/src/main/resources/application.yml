@@ -58,7 +58,7 @@ app:
     expiration-hours: 168
 
   ai:
-    groq-api-key: ${GROQ_API_KEY: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}
+    groq-api-key: ${GROQ_API_KEY:$GROQ_SK}
     groq-base-url: ${GROQ_BASE_URL:https://api.groq.com/openai/v1}
     model: ${GROQ_MODEL:llama-3.3-70b-versatile}
 
