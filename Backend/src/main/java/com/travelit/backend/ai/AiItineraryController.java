@@ -1,6 +1,7 @@
 package com.travelit.backend.ai;
 
 import com.travelit.backend.ai.dto.GenerateItineraryRequest;
+import com.travelit.backend.ai.dto.GeneratedItinerary;
 import com.travelit.backend.itinerary.dto.DayResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,8 +25,29 @@ public class AiItineraryController {
     private final AiItineraryService aiItineraryService;
 
     /**
-     * Generates a day-by-day itinerary from a free-form prompt plus the trip's own
-     * dates/destination, and persists it directly into the trip's itinerary days/activities.
+     * Step 1 — propose an itinerary from the prompt + the trip's dates/destination,
+     * WITHOUT saving. The client previews this and calls {@code /apply} to confirm.
+     */
+    @PostMapping("/itinerary/suggest")
+    public ResponseEntity<GeneratedItinerary> suggest(@PathVariable UUID tripId,
+                                                      @Valid @RequestBody GenerateItineraryRequest request,
+                                                      @AuthenticationPrincipal String userId) {
+        return ResponseEntity.ok(aiItineraryService.suggest(tripId, request, UUID.fromString(userId)));
+    }
+
+    /**
+     * Step 2 — commit a proposal the user has reviewed and confirmed into the trip.
+     */
+    @PostMapping("/itinerary/apply")
+    public ResponseEntity<List<DayResponse>> apply(@PathVariable UUID tripId,
+                                                   @RequestBody GeneratedItinerary proposal,
+                                                   @AuthenticationPrincipal String userId) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(aiItineraryService.apply(tripId, proposal, UUID.fromString(userId)));
+    }
+
+    /**
+     * One-shot generate + persist (legacy; the suggest/apply pair is preferred).
      */
     @PostMapping("/itinerary")
     public ResponseEntity<List<DayResponse>> generateItinerary(@PathVariable UUID tripId,

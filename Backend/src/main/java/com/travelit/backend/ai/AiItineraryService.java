@@ -95,6 +95,39 @@ public class AiItineraryService {
     @Value("${app.ai.model:llama-3.3-70b-versatile}")
     private String model;
 
+    /**
+     * Step 1 — propose an itinerary from the prompt WITHOUT saving anything.
+     * The user reviews this and confirms before it's committed via {@link #apply}.
+     */
+    @Transactional(readOnly = true)
+    public GeneratedItinerary suggest(UUID tripId, GenerateItineraryRequest request, UUID userId) {
+        Trip trip = tripRepository.findById(tripId)
+                .orElseThrow(() -> new EntityNotFoundException("Trip not found"));
+        validateEditor(tripId, userId);
+
+        GeneratedItinerary generated = requestItineraryFromGroq(trip, request);
+        if (generated.days() == null || generated.days().isEmpty()) {
+            throw new AiGenerationException("Groq did not return any itinerary days");
+        }
+        return generated;
+    }
+
+    /**
+     * Step 2 — persist a proposal the user has reviewed and confirmed. This is the
+     * only path that writes AI-generated content to the trip.
+     */
+    @Transactional
+    public List<DayResponse> apply(UUID tripId, GeneratedItinerary proposal, UUID userId) {
+        Trip trip = tripRepository.findById(tripId)
+                .orElseThrow(() -> new EntityNotFoundException("Trip not found"));
+        validateEditor(tripId, userId);
+        if (proposal == null || proposal.days() == null || proposal.days().isEmpty()) {
+            throw new AiGenerationException("There is no itinerary to add");
+        }
+        return persist(trip, proposal, tripId, userId);
+    }
+
+    /** One-shot generate + persist (kept for backward compatibility). */
     @Transactional
     public List<DayResponse> generateItinerary(UUID tripId, GenerateItineraryRequest request, UUID userId) {
         Trip trip = tripRepository.findById(tripId)
@@ -105,7 +138,10 @@ public class AiItineraryService {
         if (generated.days() == null || generated.days().isEmpty()) {
             throw new AiGenerationException("Groq did not return any itinerary days");
         }
+        return persist(trip, generated, tripId, userId);
+    }
 
+    private List<DayResponse> persist(Trip trip, GeneratedItinerary generated, UUID tripId, UUID userId) {
         for (GeneratedDay genDay : generated.days()) {
             LocalDate date = resolveDate(trip, genDay);
             ItineraryDay day = dayRepository.findByTrip_IdAndDate(tripId, date)
