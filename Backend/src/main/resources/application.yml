@@ -57,6 +57,10 @@ app:
   invite:
     expiration-hours: 168
 
+  ai:
+    anthropic-api-key: ${ANTHROPIC_API_KEY:}
+    model: ${ANTHROPIC_MODEL:claude-opus-5}
+
 springdoc:
   api-docs:
     path: /api-docs
