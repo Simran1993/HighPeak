@@ -4,9 +4,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CalendarPlus, ExternalLink, MapPin, Pencil, Plane, Trash2 } from 'lucide-react';
+import { CalendarPlus, ExternalLink, MapPin, Pencil, Plane, Sparkles, Trash2 } from 'lucide-react';
 import { itineraryApi } from '@/api/itinerary';
 import { queryKeys } from '@/lib/queryKeys';
+import { AiPlannerModal } from '@/features/ai/AiPlannerModal';
 import { Button } from '@/components/ui/Button';
 import { Field, Input, Select, Textarea } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
@@ -185,6 +186,7 @@ function AddDayForm({ tripId, onDone }: { tripId: string; onDone: () => void }) 
 export function ItineraryTab({ tripId, canEdit }: { tripId: string; canEdit: boolean }) {
   const queryClient = useQueryClient();
   const [showAddDay, setShowAddDay] = useState(false);
+  const [showAiPlanner, setShowAiPlanner] = useState(false);
   const [activityModal, setActivityModal] = useState<{ dayId: string; editing: ActivityResponse | null } | null>(null);
 
   const { data: days, isLoading } = useQuery({
@@ -224,9 +226,14 @@ export function ItineraryTab({ tripId, canEdit }: { tripId: string; canEdit: boo
           )}
         </div>
         {canEdit && (
-          <Button variant="outline" size="sm" onClick={() => setShowAddDay((s) => !s)}>
-            <CalendarPlus className="h-4 w-4" /> Add day
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowAddDay((s) => !s)}>
+              <CalendarPlus className="h-4 w-4" /> Add day
+            </Button>
+            <Button size="sm" onClick={() => setShowAiPlanner(true)}>
+              <Sparkles className="h-4 w-4" /> Plan with AI
+            </Button>
+          </div>
         )}
       </div>
 
@@ -236,8 +243,23 @@ export function ItineraryTab({ tripId, canEdit }: { tripId: string; canEdit: boo
         <EmptyState
           emoji="📅"
           title="Nothing planned yet"
-          subtitle={canEdit ? 'Add your first day to start building the itinerary.' : 'The itinerary is still empty.'}
-          action={canEdit ? <Button onClick={() => setShowAddDay(true)}>Add a day</Button> : undefined}
+          subtitle={
+            canEdit
+              ? 'Add your first day yourself, or let AI build the whole itinerary from a prompt.'
+              : 'The itinerary is still empty.'
+          }
+          action={
+            canEdit ? (
+              <div className="flex flex-wrap justify-center gap-2">
+                <Button variant="outline" onClick={() => setShowAddDay(true)}>
+                  Add a day
+                </Button>
+                <Button onClick={() => setShowAiPlanner(true)}>
+                  <Sparkles className="h-4 w-4" /> Plan with AI
+                </Button>
+              </div>
+            ) : undefined
+          }
         />
       ) : (
         <ol className="relative space-y-6 border-l-2 border-brand-100 pl-6">
@@ -369,6 +391,8 @@ export function ItineraryTab({ tripId, canEdit }: { tripId: string; canEdit: boo
           editing={activityModal.editing}
         />
       )}
+
+      {showAiPlanner && <AiPlannerModal tripId={tripId} onClose={() => setShowAiPlanner(false)} />}
     </div>
   );
 }

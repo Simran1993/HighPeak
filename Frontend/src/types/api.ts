@@ -135,6 +135,14 @@ export interface CreateActivityRequest {
 
 export type UpdateActivityRequest = Partial<CreateActivityRequest>;
 
+// AI itinerary generation
+export interface GenerateItineraryRequest {
+  prompt: string;
+  preferences?: string[];
+  travelers?: number;
+  budgetLevel?: string;
+}
+
 // Invites
 export type InviteStatus = 'PENDING' | 'ACCEPTED' | 'REVOKED' | 'EXPIRED';
 
@@ -217,7 +225,8 @@ export type TripEventType =
   | 'ACTIVITY_ADDED'
   | 'ACTIVITY_UPDATED'
   | 'ACTIVITY_DELETED'
-  | 'MESSAGE_ADDED';
+  | 'MESSAGE_ADDED'
+  | 'AI_ITINERARY_GENERATED';
 
 export interface TripEvent {
   type: TripEventType;
