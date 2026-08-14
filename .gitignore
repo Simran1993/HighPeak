@@ -1,0 +1,22 @@
+# Environment secrets — never commit these
+.env
+*.env
+!.env.example
+
+# macOS
+.DS_Store
+
+# IntelliJ / IDE
+.idea/
+*.iml
+*.iws
+
+# Gradle
+Backend/.gradle/
+Backend/build/
+Backend/src/main/resources/application.yml
+Backend/bin/main/application.yml
+Backend/bin
+
+# Logs
+*.log
