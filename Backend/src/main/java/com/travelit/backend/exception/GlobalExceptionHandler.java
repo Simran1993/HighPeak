@@ -1,5 +1,6 @@
 package com.travelit.backend.exception;
 
+import com.travelit.backend.ai.AiGenerationException;
 import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +43,13 @@ public class GlobalExceptionHandler {
     ResponseEntity<ErrorResponse> handleNotFound(EntityNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ErrorResponse.of(HttpStatus.NOT_FOUND, ex.getMessage()));
+    }
+
+    @ExceptionHandler(AiGenerationException.class)
+    ResponseEntity<ErrorResponse> handleAiGeneration(AiGenerationException ex) {
+        log.error("AI itinerary generation failed", ex);
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(ErrorResponse.of(HttpStatus.BAD_GATEWAY, ex.getMessage()));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
