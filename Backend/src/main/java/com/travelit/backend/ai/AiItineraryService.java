@@ -92,7 +92,7 @@ public class AiItineraryService {
     private final ActivityRepository activityRepository;
     private final TripEventPublisher eventPublisher;
 
-    @Value("${app.ai.model:llama-3.3-70b-versatile}")
+    @Value("${app.ai.model:openai/gpt-oss-120b}")
     private String model;
 
     /**
