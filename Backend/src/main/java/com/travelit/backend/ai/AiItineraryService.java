@@ -95,6 +95,9 @@ public class AiItineraryService {
     @Value("${app.ai.model:llama-3.3-70b-versatile}")
     private String model;
 
+    @Value("${app.ai.max-completion-tokens:4000}")
+    private Integer maxCompletionTokens;
+
     /**
      * Step 1 — propose an itinerary from the prompt WITHOUT saving anything.
      * The user reviews this and confirms before it's committed via {@link #apply}.
@@ -179,7 +182,7 @@ public class AiItineraryService {
                 model,
                 List.of(GroqMessage.system(SYSTEM_PROMPT), GroqMessage.user(buildUserPrompt(trip, request))),
                 GroqResponseFormat.JSON_OBJECT,
-                8000,
+                maxCompletionTokens,
                 0.4
         );
 
@@ -192,6 +195,13 @@ public class AiItineraryService {
                     .body(GroqChatResponse.class);
         } catch (RestClientResponseException e) {
             log.error("Groq itinerary generation failed: {} {}", e.getStatusCode(), e.getResponseBodyAsString(), e);
+            int status = e.getStatusCode().value();
+            if (status == 429 || status == 413) {
+                throw new AiGenerationException(
+                        "Groq's rate limit for model \"" + model + "\" was exceeded for this request. Try a "
+                                + "shorter prompt, or ask your admin to lower GROQ_MAX_COMPLETION_TOKENS or switch "
+                                + "GROQ_MODEL to one with a higher free-tier limit.", e);
+            }
             throw new AiGenerationException("Failed to reach Groq to generate the itinerary", e);
         } catch (RestClientException e) {
             log.error("Groq itinerary generation failed", e);
