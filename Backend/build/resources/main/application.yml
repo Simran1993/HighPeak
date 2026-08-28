@@ -57,6 +57,12 @@ app:
   invite:
     expiration-hours: 168
 
+  ai:
+    # Never hardcode the key here — it's read from the GROQ_API_KEY env var only.
+    groq-api-key: ${GROQ_API_KEY:}
+    groq-base-url: ${GROQ_BASE_URL:https://api.groq.com/openai/v1}
+    model: ${GROQ_MODEL:llama-3.3-70b-versatile}
+
 springdoc:
   api-docs:
     path: /api-docs
@@ -67,3 +73,5 @@ server:
   port: ${PORT:8080}
   servlet:
     context-path: /api/v1
+  # Honor X-Forwarded-* from Railway's HTTPS proxy so OAuth redirect URIs are https://.
+  forward-headers-strategy: framework

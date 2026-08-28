@@ -40,6 +40,7 @@ export function useTripSocket(tripId: string | undefined) {
             case 'ACTIVITY_ADDED':
             case 'ACTIVITY_UPDATED':
             case 'ACTIVITY_DELETED':
+            case 'AI_ITINERARY_GENERATED':
               queryClient.invalidateQueries({ queryKey: queryKeys.itinerary(tripId) });
               break;
             case 'MESSAGE_ADDED':

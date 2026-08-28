@@ -33,3 +33,6 @@ logging:
   level:
     root: WARN
     com.travelit.backend: INFO
+
+server:
+  forward-headers-strategy: framework
