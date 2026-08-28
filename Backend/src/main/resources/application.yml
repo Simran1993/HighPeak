@@ -62,6 +62,9 @@ app:
     groq-api-key: ${GROQ_API_KEY:}
     groq-base-url: ${GROQ_BASE_URL:https://api.groq.com/openai/v1}
     model: ${GROQ_MODEL:llama-3.3-70b-versatile}
+    # Total request budget (prompt + this) must stay under the model's free-tier
+    # tokens-per-minute cap, which varies a lot by model — some are as low as 8000.
+    max-completion-tokens: ${GROQ_MAX_COMPLETION_TOKENS:4000}
 
 springdoc:
   api-docs:
